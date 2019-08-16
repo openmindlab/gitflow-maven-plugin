@@ -70,7 +70,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scm.url>scm:git:https://github.com/openmindlab/gitflow-maven-plugin.git</scm.url>
         <url>https://github.com/openmindlab/gitflow-maven-plugin</url>
-        <tag>HEAD</tag>
         <maven-plugin-plugin.version>3.6.0</maven-plugin-plugin.version>
     </properties>
 
