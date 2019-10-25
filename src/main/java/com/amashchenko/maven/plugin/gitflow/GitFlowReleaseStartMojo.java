@@ -40,8 +40,9 @@ public class GitFlowReleaseStartMojo extends AbstractGitFlowMojo {
      * Whether to use the same name of the release branch for every release.
      * Default is <code>false</code>, i.e. project version will be added to
      * release branch prefix. <br/>
+     * Will have no effect if the <code>branchName</code> parameter is set.
      * <br/>
-     * 
+     *
      * Note: By itself the default releaseBranchPrefix is not a valid branch
      * name. You must change it when setting sameBranchName to <code>true</code>
      * .
@@ -128,6 +129,16 @@ public class GitFlowReleaseStartMojo extends AbstractGitFlowMojo {
     @Parameter(property = "useSnapshotInRelease", defaultValue = "false")
     private boolean useSnapshotInRelease;
 
+    /**
+     * Name of the created release branch.<br>
+     * The effective branch name will be a composite of this branch name and the
+     * <code>releaseBranchPrefix</code>.
+     * 
+     * @since 1.13.1
+     */
+    @Parameter(property = "branchName")
+    private String branchName;
+
     /** {@inheritDoc} */
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -183,9 +194,11 @@ public class GitFlowReleaseStartMojo extends AbstractGitFlowMojo {
             final String releaseVersion = getReleaseVersion();
 
             // get release branch
-            String branchName = gitFlowConfig.getReleaseBranchPrefix();
-            if (!sameBranchName) {
-                branchName += releaseVersion;
+            String fullBranchName = gitFlowConfig.getReleaseBranchPrefix();
+            if (StringUtils.isNotBlank(branchName)) {
+                fullBranchName += branchName;
+            } else if (!sameBranchName) {
+                fullBranchName += releaseVersion;
             }
 
             String projectVersion = releaseVersion;
@@ -206,7 +219,7 @@ public class GitFlowReleaseStartMojo extends AbstractGitFlowMojo {
                         commitMessages.getReleaseStartMessage()); 
 
                 // git branch release/... develop
-                gitCreateBranch(branchName, startPoint);
+                gitCreateBranch(fullBranchName, startPoint);
 
                 final String nextSnapshotVersion =
                         getNextSnapshotVersion(releaseVersion);
@@ -216,10 +229,10 @@ public class GitFlowReleaseStartMojo extends AbstractGitFlowMojo {
                 commitProjectVersion(nextSnapshotVersion, commitMessages.getReleaseVersionUpdateMessage());
 
                 // git checkout release/...
-                gitCheckout(branchName);
+                gitCheckout(fullBranchName);
             } else {
                 // git checkout -b release/... develop
-                gitCreateAndCheckout(branchName, startPoint);
+                gitCreateAndCheckout(fullBranchName, startPoint);
 
                 // mvn versions:set ...
                 // git commit -a -m ...
@@ -237,7 +250,7 @@ public class GitFlowReleaseStartMojo extends AbstractGitFlowMojo {
                     gitPush(gitFlowConfig.getDevelopmentBranch(), false);
                 }
 
-                gitPush(branchName, false);
+                gitPush(fullBranchName, false);
             }
         } catch (CommandLineException e) {
             throw new MojoFailureException("release-start", e);

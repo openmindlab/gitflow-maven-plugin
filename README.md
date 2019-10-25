@@ -22,7 +22,7 @@ The plugin is available from Maven Central.
             <plugin>
                 <groupId>com.amashchenko.maven.plugin</groupId>
                 <artifactId>gitflow-maven-plugin</artifactId>
-                <version>1.12.0</version>
+                <version>1.13.0</version>
                 <configuration>
                     <!-- optional configuration -->
                 </configuration>
@@ -149,8 +149,20 @@ Since `1.2.1` commit messages can be changed in plugin's configuration section i
 
             <releaseVersionUpdateMessage>Update for next development version</releaseVersionUpdateMessage>
 
+            <!-- git merge messages -->
             <!-- Default git merge commit message will be used if left empty or undefined. -->
+
             <releaseFinishMergeMessage></releaseFinishMergeMessage>
+            <releaseFinishDevMergeMessage></releaseFinishDevMergeMessage>
+
+            <featureFinishDevMergeMessage></featureFinishDevMergeMessage>
+
+            <hotfixFinishMergeMessage></hotfixFinishMergeMessage>
+            <hotfixFinishDevMergeMessage></hotfixFinishDevMergeMessage>
+            <hotfixFinishReleaseMergeMessage></hotfixFinishReleaseMergeMessage>
+            <hotfixFinishSupportMergeMessage></hotfixFinishSupportMergeMessage>
+
+            <!-- / git merge messages -->
 
             <tagHotfixMessage>Tag hotfix</tagHotfixMessage>
             <tagReleaseMessage>Tag release</tagReleaseMessage>
@@ -180,12 +192,16 @@ Note that although `${project.version}` can be used, any changes to version intr
 The `argLine` parameter can be used to pass command line arguments to the underlying Maven commands. For example, `-DcreateChecksum` in `mvn gitflow:release-start -DargLine=-DcreateChecksum` 
 will be passed to all underlying Maven commands.
 
-### Update maven properties
+## Maven CI friendly versions
 
-Since 1.12.1 version, if you want to update a maven property with the new version, you can set the `versionProperty` parameter with the property you want to update.
+Maven property can be updated with the new version by setting the `versionProperty` parameter with the property you want to update.
 For example, `-DversionProperty=revision` will update the `<revision>` property defined in the project pom.xml.
 
-Since 1.12.2 version, the `<version>` of your pom.xml will be evaluated so that version value such as `<version>${revision}</version>` will correctly recognized (if property "revision" can be resolved, of course). Notice that if you need gitflow-maven-plugin not modify version tag after release, you must use parameter `skipUpdateVersion=true`
+The `skipUpdateVersion` parameter can be used to skip updating `<version>` in the pom.xml. The default value is `false` (i.e. the version will be updated).
+
+To support [CI friendly versioning](https://maven.apache.org/maven-ci-friendly.html) in projects which use `<version>${revision}</version>` (e.g. [spring-boot](https://github.com/spring-projects/spring-boot/blob/master/pom.xml))
+set `versionProperty` to `revision` and `skipUpdateVersion` to `true`, add [flatten-maven-plugin](https://www.mojohaus.org/flatten-maven-plugin/) and call its `flatten` goal before gitflow goal.
+For example, `mvn flatten:flatten gitflow:release`.
 
 ## Additional goal parameters
 

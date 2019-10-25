@@ -50,8 +50,6 @@ public abstract class AbstractGitFlowMojo extends AbstractMojo {
     private static final String VERSIONS_MAVEN_PLUGIN_SET_PROPERTY_GOAL = "org.codehaus.mojo:versions-maven-plugin:set-property";
     /** Name of the tycho-versions-plugin set-version goal. */
     private static final String TYCHO_VERSIONS_PLUGIN_SET_GOAL = "org.eclipse.tycho:tycho-versions-plugin:set-version";
-    /** Name of the maven-help-plugin evaluate goal .*/
-    private static final String HELP_PLUGIN_EVALUATE_GOAL = "org.apache.maven.plugins:maven-help-plugin:evaluate";
 
     /** System line separator. */
     protected static final String LS = System.getProperty("line.separator");
@@ -140,7 +138,7 @@ public abstract class AbstractGitFlowMojo extends AbstractMojo {
     /**
      * Property to set version to.
      *
-     * @since 1.12.1
+     * @since 1.13.0
      */
     @Parameter(property = "versionProperty")
     private String versionProperty;
@@ -149,7 +147,7 @@ public abstract class AbstractGitFlowMojo extends AbstractMojo {
      * Whether to skip updating version. Useful with {@link #versionProperty} to be
      * able to update <code>revision</code> property without modifying version tag.
      * 
-     * @since 1.12.1
+     * @since 1.13.0
      */
     @Parameter(property = "skipUpdateVersion")
     private boolean skipUpdateVersion = false;
@@ -222,27 +220,18 @@ public abstract class AbstractGitFlowMojo extends AbstractMojo {
     }
 
     /**
-     * Gets current project version evaluating pom.xml
-     * This implementation takes care of version based on properties or other runtime evaluation needed.
-     * Under the hood it delegates to org.apache.maven.plugins:maven-help-plugin which is the same used for
-     * effective-pom
+     * Gets current project version from pom.xml file.
      * 
      * @return Current project version.
      * @throws MojoFailureException
-     * @throws CommandLineException 
      */
-    protected String getCurrentProjectVersion() throws MojoFailureException, CommandLineException {
-    	
-    	CommandResult res = executeCommand(cmdMvn, true, argLine,HELP_PLUGIN_EVALUATE_GOAL,"-Dexpression=project.version","-q","-DforceStdout");
-    	String evaulatedVersion = res.getOut().trim();
-    	if (getLog().isDebugEnabled()) {
-    	 getLog().debug("evaluated version from pom.xml: '"+evaulatedVersion+"'");
-    	}
-        if (StringUtils.isBlank(evaulatedVersion)) {
+    protected String getCurrentProjectVersion() throws MojoFailureException {
+        final Model model = readModel(mavenSession.getCurrentProject());
+        if (model.getVersion() == null) {
             throw new MojoFailureException(
-                    "Cannot get current project version. Try running help:effective-pom");
+                    "Cannot get current project version. This plugin should be executed from the parent project.");
         }
-        return evaulatedVersion;
+        return model.getVersion();
     }
 
     /**
@@ -468,6 +457,7 @@ public abstract class AbstractGitFlowMojo extends AbstractMojo {
         // quotes
         // https://github.com/aleksandr-m/gitflow-maven-plugin/issues/3
         branches = removeQuotes(branches);
+        branches = StringUtils.strip(branches);
 
         return branches;
     }
@@ -711,12 +701,17 @@ public abstract class AbstractGitFlowMojo extends AbstractMojo {
      * 
      * @param branchName
      *            Branch name to merge.
+     * @param message
+     *            Merge commit message.
+     * @param messageProperties
+     *            Properties to replace in message.
      * @throws MojoFailureException
      * @throws CommandLineException
      */
-    protected void gitMergeNoff(final String branchName)
+    protected void gitMergeNoff(final String branchName, final String message,
+            final Map<String, String> messageProperties)
             throws MojoFailureException, CommandLineException {
-        gitMerge(branchName, false, true, false, null, null);
+        gitMerge(branchName, false, true, false, message, messageProperties);
     }
 
     /**
